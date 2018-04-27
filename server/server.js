@@ -1,16 +1,17 @@
-var express = require('express');
-var bodyParser = require('body-parser');
+const express = require('express');
+const bodyParser = require('body-parser');
+const {ObjectID} = require('mongodb');
 
-var {mongoose}  = require('./db/mongoose.js');
-var {Todo} = require('./models/todo.js');
-var {User} = require('./models/user.js');
+const {mongoose}  = require('./db/mongoose.js');
+const {Todo} = require('./models/todo.js');
+const {User} = require('./models/user.js');
 
-var app  = express();
+const app  = express();
 
 app.use(bodyParser.json());
 
 app.post('/todos', (req, res) => {
-    var todo = new Todo({
+    const todo = new Todo({
         text: req.body.text
     });
 
@@ -28,6 +29,20 @@ app.get('/todos', (req, res) => {
     }, (e) => {
         res.status(400).send(e);
     });
+});
+
+app.get('/todos/:id', (req, res) => {
+    const id = req.params.id;
+    if (!ObjectID.isValid(id)) {
+        return res.status(404).send({err: "Id is invalid"});
+    }
+    Todo.findById(id).then((todo) => {
+        if (todo) {
+            return res.status(200).send(todo);
+        } else {
+            return res.status(400).send({err: "Unable to find todo"});
+        }
+    }, (e) => res.status(400).send(e));
 });
 
 app.listen(3000, () => {
