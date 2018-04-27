@@ -40,7 +40,7 @@ app.get('/todos/:id', (req, res) => {
         if (todo) {
             return res.status(200).send(todo);
         } else {
-            return res.status(400).send({err: "Unable to find todo"});
+            return res.status(404).send({err: "Unable to find todo"});
         }
     }, (e) => res.status(400).send(e));
 });
