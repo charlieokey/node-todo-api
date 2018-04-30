@@ -18,9 +18,8 @@ app.post('/todos', (req, res) => {
         text: req.body.text
     });
 
-    todo.save().then((doc) => {
-        res.send(doc);
-        console.log(JSON.stringify(doc, undefined, 2));
+    todo.save().then((todo) => {
+        res.send(todo);
     }, (e) => {
         res.status(400).send(e);
     });
@@ -70,6 +69,17 @@ app.patch('/todos/:id', (req, res) => {
     Todo.findByIdAndUpdate(id, {$set:body}, {new: true}).then((todo) => {
         if (!todo) return res.status(404).send();
         else res.status(200).send({todo});
+    }).catch((e) => {
+        res.status(400).send(e);
+    });
+});
+
+app.post('/users', (req, res) => {
+    const body = _.pick(req.body, ['email', 'password']);
+    const user = new User(body);
+
+    user.generateAuthToken().then((token) => {
+        res.header('x-auth', token).send({user});
     }).catch((e) => {
         res.status(400).send(e);
     });
