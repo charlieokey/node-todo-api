@@ -3,6 +3,7 @@ const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
 const bcrypt = require('bcryptjs');
+const {ObjectID} = require('mongodb');
 
 const UserSchema = new mongoose.Schema ({
     email: {
@@ -45,11 +46,21 @@ UserSchema.methods.toJSON = function () {
 UserSchema.methods.generateAuthToken = function () {
     const user = this;
     const access = 'auth';
-    const token = jwt.sign({_id: user._id.toHexString(), access}, '123!@#');
+    const token = jwt.sign({_id: user._id, access}, '123!@#').toString();
 
     user.tokens.push({access, token});
 
     return user.save().then(() => token);
+};
+
+UserSchema.methods.removeToken = function (token) {
+    const user = this;
+
+    return user.update({
+        $pull: {
+            tokens: {token}
+        }
+    });
 };
 
 UserSchema.statics.findByToken = function (token) {
@@ -62,9 +73,24 @@ UserSchema.statics.findByToken = function (token) {
         return Promise.reject(e);
     }
     return User.findOne({
-        '_id': decoded._id,
+        '_id': decoded._id
         // 'tokens.token': token, 
         // 'tokens.access': 'auth'
+    });
+};
+
+UserSchema.statics.findByCred = function (email, password) {
+    const User = this;
+    
+    return User.findOne({email}).then((user) => {
+        if (!user) {
+            return Promise.reject();
+        }
+
+        return bcrypt.compare(password, user.password).then((result) => {
+            if (result) return user;
+            else return Promise.reject('Incorrect password');
+        });
     });
 };
 
